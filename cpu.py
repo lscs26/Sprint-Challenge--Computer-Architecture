@@ -89,6 +89,10 @@ class CPU:
             self.alu('SUB', operand_a, operand_b)
             self.pc += 3
 
+        def CMP(operand_a, operand_b):
+            self.alu('CMP', operand_a, operand_b)
+            self.pc += 3
+
         # Used to stop running CPU
         def HLT(operand_a, operand_b):
             self.running = False
@@ -107,7 +111,8 @@ class CPU:
             0b01000101: PUSH,
             0b01000110: POP,
             0b01010000: CALL,
-            0b00010001: RET
+            0b00010001: RET,
+            0b10100111: CMP,
         }
 
     def load(self):
@@ -155,10 +160,26 @@ class CPU:
         def SUB(reg_a, reg_b):
             self.reg[reg_a] -= self.reg[reg_b]
 
+        def CMP(reg_a, reg_b):
+            a = self.reg[reg_a]
+            b = self.reg[reg_b]
+
+            compared_value = a - b
+
+            if compared_value > 0:
+                self.fl = 0b00000010
+            elif compared_value < 0:
+                self.fl = 0b00000100
+            elif compared_value == 0:
+                self.fl = 0b00000001
+            else:
+                self.fl = 0b00000000
+
         alu_opcodes = {
             'MUL': MUL,
             'ADD': ADD,
-            'SUB': SUB
+            'SUB': SUB,
+            'CMP': CMP,
         }
 
         alu_op = alu_opcodes[op]
