@@ -79,6 +79,12 @@ class CPU:
         def JMP(operand_a, operand_b):
             self.pc = self.reg[operand_a]
 
+        def JEQ(operand_a, operand_b):
+            if bin(self.fl)[-1] == '1':
+                JMP(operand_a, operand_b)
+            else:
+                self.pc += 2
+
         # Calls on ALU
         def MUL(operand_a, operand_b):
             self.alu('MUL', operand_a, operand_b)
@@ -116,6 +122,7 @@ class CPU:
             0b01010000: CALL,
             0b00010001: RET,
             0b01010100: JMP,
+            0b01010101: JEQ,
             0b10100111: CMP,
         }
 
