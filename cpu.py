@@ -2,6 +2,7 @@
 
 import sys
 
+
 class CPU:
     """Main CPU class."""
 
@@ -12,10 +13,8 @@ class CPU:
 
         # 8 general-purpose 8-bit numeric registers R0-R7
         # R5 is reserved as the interrupt mask (IM)
-        # An internal switch setting that controls whether an interrupt can be processed or not. The mask is a bit that is turned on and off by the program.
         # R6 is reserved as the interrupt status (IS)
         # R7 is reserved as the stack pointer (SP)
-
         self.reg = [0] * 8
 
         self.SP = 7
@@ -50,12 +49,14 @@ class CPU:
             self.reg[self.SP] -= 1
             reg_num = operand_a
             reg_val = self.reg[reg_num]
+            # Copy reg value into memory at address SP
             self.ram[self.reg[self.SP]] = reg_val
             self.pc += 2
 
         def POP(operand_a, operand_b):
             val = self.ram[self.reg[self.SP]]
             reg_num = operand_a
+            # Copy value from memory at SP into register
             self.reg[reg_num] = val
             self.reg[self.SP] += 1
             self.pc += 2
@@ -81,6 +82,12 @@ class CPU:
 
         def JEQ(operand_a, operand_b):
             if bin(self.fl)[-1] == '1':
+                JMP(operand_a, operand_b)
+            else:
+                self.pc += 2
+
+        def JNE(operand_a, operand_b):
+            if bin(self.fl)[-1] == '0':
                 JMP(operand_a, operand_b)
             else:
                 self.pc += 2
@@ -113,16 +120,17 @@ class CPU:
             # List of opcodes
             0b10000010: LDI,
             0b01000111: PRN,
-            0b00000001: HLT,
-            0b10100010: MUL,
-            0b10100000: ADD,
-            0b10100001: SUB,
             0b01000101: PUSH,
             0b01000110: POP,
             0b01010000: CALL,
             0b00010001: RET,
             0b01010100: JMP,
             0b01010101: JEQ,
+            0b01010110: JNE,
+            0b00000001: HLT,
+            0b10100010: MUL,
+            0b10100000: ADD,
+            0b10100001: SUB,
             0b10100111: CMP,
         }
 
@@ -131,21 +139,9 @@ class CPU:
 
         address = 0
 
-        # For now, we've just hardcoded a program:
-
-        # program = [
-        #     # From print8.ls8
-        #     0b10000010,  # LDI R0,8
-        #     0b00000000,
-        #     0b00001000,
-        #     0b01000111,  # PRN R0
-        #     0b00000000,
-        #     0b00000001,  # HLT
-        # ]
-
         program = []
 
-        f = open(f'examples/{sys.argv[1]}', 'r')
+        f = open(f'{sys.argv[1]}', 'r')
 
         for i in f.read().split('\n'):
             if i != '' and i[0] != '#':
@@ -158,15 +154,14 @@ class CPU:
             self.ram[address] = instruction
             address += 1
 
-
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
-        def MUL(reg_a, reg_b):
-            self.reg[reg_a] *= self.reg[reg_b]
-
         def ADD(reg_a, reg_b):
             self.reg[reg_a] += self.reg[reg_b]
+
+        def MUL(reg_a, reg_b):
+            self.reg[reg_a] *= self.reg[reg_b]
 
         def SUB(reg_a, reg_b):
             self.reg[reg_a] -= self.reg[reg_b]
@@ -187,9 +182,9 @@ class CPU:
                 self.fl = 0b00000000
 
         alu_opcodes = {
-            'MUL': MUL,
             'ADD': ADD,
             'SUB': SUB,
+            'MUL': MUL,
             'CMP': CMP,
         }
 
@@ -208,8 +203,8 @@ class CPU:
 
         print(f"TRACE: %02X | %02X %02X %02X |" % (
             self.pc,
-            #self.fl,
-            #self.ie,
+            # self.fl,
+            # self.ie,
             self.ram_read(self.pc),
             self.ram_read(self.pc + 1),
             self.ram_read(self.pc + 2)
@@ -219,6 +214,13 @@ class CPU:
             print(" %02X" % self.reg[i], end='')
 
         print()
+
+    '''
+    Inside the CPU, there are two internal registers used for memory operations: 
+    the Memory Address Register (MAR) and the Memory Data Register (MDR). 
+    The MAR contains the address that is being read or written to. 
+    The MDR contains the data that was read or the data to write.
+    '''
 
     # Accepts the address to read and return the value stored there.
     def ram_read(self, mar):
@@ -231,9 +233,9 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-            # Start running the CPU
+        # Start running the CPU
         while self.running:
-            # self.trace()
+            # self.trace() # Used to debug
             # Get the first set of instructions
             # Instruction Register (IR)
             ir = self.ram_read(self.pc)
